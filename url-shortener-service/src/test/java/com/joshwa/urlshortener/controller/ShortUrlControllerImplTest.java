@@ -95,9 +95,4 @@ class ShortUrlControllerImplTest {
                 .andExpect(content().string(SHORT_URL_NOT_FOUND_EXCEPTION_MESSAGE));
     }
 
-//    @Test
-//    void shouldDeleteExpiredUrls_whenCleanupServiceRuns() throws Exception {
-//
-//    }
-
 }

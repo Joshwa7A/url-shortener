@@ -1,7 +1,7 @@
 # URL Shortener
 
 ![Java](https://img.shields.io/badge/Java-17-blue)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.x-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
 
 A production-ready full-stack URL Shortener application built using Spring Boot, React (Vite), MySQL, and Redis.
