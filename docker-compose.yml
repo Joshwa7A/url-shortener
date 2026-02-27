@@ -2,27 +2,36 @@ services:
 
   mysql:
     image: mysql:8
-    container_name: mysql
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 10
-    restart: always
+    restart: unless-stopped
 
   redis:
     image: redis:7
-    container_name: redis
     ports:
       - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   backend:
     build: ./url-shortener-service
+    image: joshwa7a/url-shortener:backend
     ports:
       - "8081:8081"
     env_file:
@@ -31,11 +40,18 @@ services:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build: ./url-shortener-frontend
+    image: joshwa7a/url-shortener:frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
