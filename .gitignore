@@ -1,0 +1,12 @@
+# Env 
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
