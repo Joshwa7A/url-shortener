@@ -151,7 +151,7 @@ git clone https://github.com/Joshwa7A/url-shortener.git
 
 ## Running the Application
 
-### Option 1: Using Docker (Recommended)
+### Option 1: Build and Run Using Docker
 
 Make sure Docker is installed.
 
@@ -174,7 +174,18 @@ http://localhost:3000
 
 ---
 
-### Option 2: Run Backend and Frontend Locally
+### Option 2: Run Using Prebuilt Docker Images
+
+This pulls images from Docker Hub.
+
+```
+docker compose pull
+docker compose up
+```
+
+---
+
+### Option 3: Run Backend and Frontend Locally
 
 Ensure the following services are installed and running locally:
 
