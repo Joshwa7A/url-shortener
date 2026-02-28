@@ -17,6 +17,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.Optional;
+
 import static com.joshwa.urlshortener.utility.UrlUtils.*;
 
 @Slf4j
@@ -43,21 +46,48 @@ public class ShortUrlServiceImpl implements ShortUrlService {
 
     @Override
     @Transactional
-    public ShortUrlResponseDTO createShortUrl(ShortUrlRequestDTO urlRequestDTO) throws InvalidUrlException, InvalidExpiryException, ShortCodeGenerationException {
-        String normalizedUrl=normalizeUrl(urlRequestDTO.getOriginalUrl());
-        OffsetDateTime now=OffsetDateTime.now(clock);
-        if(!isValidUrl(normalizedUrl)){
+    public ShortUrlResponseDTO createShortUrl(ShortUrlRequestDTO urlRequestDTO)
+            throws InvalidUrlException, InvalidExpiryException, ShortCodeGenerationException {
+
+        String normalizedUrl = normalizeUrl(urlRequestDTO.getOriginalUrl());
+        OffsetDateTime now = OffsetDateTime.now(clock);
+
+        if (!isValidUrl(normalizedUrl)) {
             throw new InvalidUrlException(INVALID_URL_EXCEPTION_MESSAGE);
         }
-        if(null!=urlRequestDTO.getExpiryDate() && urlRequestDTO.getExpiryDate().isBefore(now)) {
+
+        if (urlRequestDTO.getExpiryDate() != null &&
+                urlRequestDTO.getExpiryDate().isBefore(now)) {
             throw new InvalidExpiryException(INVALID_EXPIRY_EXCEPTION_MESSAGE);
         }
-        String shortCode=generateUniqueShortCode();
-        String baseUrl=buildShortUrl(shortCode,baseAppUrl);
-        ShortUrl shortUrl=shortUrlMapper.toEntity(urlRequestDTO,shortCode,normalizedUrl);
-        shortUrlRepository.save(shortUrl);
-        return shortUrlMapper.toResponseDTO(shortUrl,baseUrl);
 
+        Instant nowInstant = now.toInstant();
+        Instant requestedExpiryInstant = urlRequestDTO.getExpiryDate() != null
+                ? urlRequestDTO.getExpiryDate().toInstant()
+                : null;
+
+        Optional<ShortUrl> existingUrl =
+                shortUrlRepository.findActiveByOriginalUrl(normalizedUrl, nowInstant);
+
+        if (existingUrl.isPresent()) {
+            ShortUrl existing = existingUrl.get();
+            Instant existingExpiry = existing.getExpiryDate();
+
+            if (Objects.equals(existingExpiry, requestedExpiryInstant)) {
+                String existingShortUrl = buildShortUrl(existing.getShortCode(), baseAppUrl);
+                return shortUrlMapper.toResponseDTO(existing, existingShortUrl);
+            }
+        }
+
+        String shortCode = generateUniqueShortCode();
+        String shortUrlValue = buildShortUrl(shortCode, baseAppUrl);
+
+        ShortUrl shortUrl =
+                shortUrlMapper.toEntity(urlRequestDTO, shortCode, normalizedUrl);
+
+        shortUrlRepository.save(shortUrl);
+
+        return shortUrlMapper.toResponseDTO(shortUrl, shortUrlValue);
     }
 
     @Override

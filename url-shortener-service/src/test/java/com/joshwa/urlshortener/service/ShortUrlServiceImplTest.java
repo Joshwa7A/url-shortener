@@ -260,4 +260,157 @@ class ShortUrlServiceImplTest {
         verify(shortUrlRepository).findByShortCode(VALID_SHORT_CODE_FOR_TEST);
         verify(shortUrlMapper,never()).toStatsDTO(any(ShortUrl.class));
     }
+
+    @Test
+    void shouldReuseExistingUrl_whenExistingAndRequestExpiryAreNull() throws Exception {
+        ShortUrlRequestDTO request = new ShortUrlRequestDTO();
+        request.setOriginalUrl(VALID_URL_FOR_TEST);
+
+        ShortUrl existing = new ShortUrl();
+        existing.setOriginalUrl(VALID_URL_FOR_TEST);
+        existing.setShortCode(VALID_SHORT_CODE_FOR_TEST);
+        existing.setExpiryDate(null);
+
+        when(shortUrlRepository.findActiveByOriginalUrl(eq(VALID_URL_FOR_TEST), any()))
+                .thenReturn(Optional.of(existing));
+
+        ShortUrlResponseDTO responseDTO = new ShortUrlResponseDTO();
+        when(shortUrlMapper.toResponseDTO(eq(existing), anyString()))
+                .thenReturn(responseDTO);
+
+        ShortUrlResponseDTO result = shortUrlServiceImpl.createShortUrl(request);
+
+        assertEquals(responseDTO, result);
+        verify(shortUrlRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldReuseExistingUrl_whenExpiryMatchesExactly() throws Exception {
+        ShortUrlRequestDTO request = new ShortUrlRequestDTO();
+        request.setOriginalUrl(VALID_URL_FOR_TEST);
+        request.setExpiryDate(FUTURE_VALID_EXPIRY);
+
+        ShortUrl existing = new ShortUrl();
+        existing.setOriginalUrl(VALID_URL_FOR_TEST);
+        existing.setShortCode(VALID_SHORT_CODE_FOR_TEST);
+        existing.setExpiryDate(FUTURE_VALID_EXPIRY.toInstant());
+
+        when(shortUrlRepository.findActiveByOriginalUrl(eq(VALID_URL_FOR_TEST), any()))
+                .thenReturn(Optional.of(existing));
+
+        ShortUrlResponseDTO responseDTO = new ShortUrlResponseDTO();
+        when(shortUrlMapper.toResponseDTO(eq(existing), anyString()))
+                .thenReturn(responseDTO);
+
+        ShortUrlResponseDTO result = shortUrlServiceImpl.createShortUrl(request);
+
+        assertEquals(responseDTO, result);
+        verify(shortUrlRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldCreateNewUrl_whenExistingIsPermanentAndRequestHasExpiry() throws Exception {
+        ShortUrlRequestDTO request = new ShortUrlRequestDTO();
+        request.setOriginalUrl(VALID_URL_FOR_TEST);
+        request.setExpiryDate(FUTURE_VALID_EXPIRY);
+
+        ShortUrl existing = new ShortUrl();
+        existing.setOriginalUrl(VALID_URL_FOR_TEST);
+        existing.setShortCode(VALID_SHORT_CODE_FOR_TEST);
+        existing.setExpiryDate(null);
+
+        when(shortUrlRepository.findActiveByOriginalUrl(eq(VALID_URL_FOR_TEST), any()))
+                .thenReturn(Optional.of(existing));
+        when(shortUrlRepository.findByShortCode(anyString()))
+                .thenReturn(Optional.empty());
+
+        ShortUrl entity = new ShortUrl();
+        when(shortUrlMapper.toEntity(any(), anyString(), anyString()))
+                .thenReturn(entity);
+        when(shortUrlRepository.save(any())).thenReturn(entity);
+        when(shortUrlMapper.toResponseDTO(any(), anyString()))
+                .thenReturn(new ShortUrlResponseDTO());
+
+        shortUrlServiceImpl.createShortUrl(request);
+
+        verify(shortUrlRepository).save(any());
+    }
+
+    @Test
+    void shouldCreateNewUrl_whenExistingExpiryDiffersFromRequestExpiry() throws Exception {
+        ShortUrlRequestDTO request = new ShortUrlRequestDTO();
+        request.setOriginalUrl(VALID_URL_FOR_TEST);
+        request.setExpiryDate(FUTURE_VALID_EXPIRY);
+
+        ShortUrl existing = new ShortUrl();
+        existing.setOriginalUrl(VALID_URL_FOR_TEST);
+        existing.setShortCode(VALID_SHORT_CODE_FOR_TEST);
+        existing.setExpiryDate(Instant.now(clock).plusSeconds(3600));
+
+        when(shortUrlRepository.findActiveByOriginalUrl(eq(VALID_URL_FOR_TEST), any()))
+                .thenReturn(Optional.of(existing));
+        when(shortUrlRepository.findByShortCode(anyString()))
+                .thenReturn(Optional.empty());
+
+        ShortUrl entity = new ShortUrl();
+        when(shortUrlMapper.toEntity(any(), anyString(), anyString()))
+                .thenReturn(entity);
+        when(shortUrlRepository.save(any())).thenReturn(entity);
+        when(shortUrlMapper.toResponseDTO(any(), anyString()))
+                .thenReturn(new ShortUrlResponseDTO());
+
+        shortUrlServiceImpl.createShortUrl(request);
+
+        verify(shortUrlRepository).save(any());
+    }
+
+    @Test
+    void shouldCreateNewUrl_whenExistingHasExpiryAndRequestIsNull() throws Exception {
+        ShortUrlRequestDTO request = new ShortUrlRequestDTO();
+        request.setOriginalUrl(VALID_URL_FOR_TEST);
+
+        ShortUrl existing = new ShortUrl();
+        existing.setOriginalUrl(VALID_URL_FOR_TEST);
+        existing.setShortCode(VALID_SHORT_CODE_FOR_TEST);
+        existing.setExpiryDate(FUTURE_VALID_EXPIRY.toInstant());
+
+        when(shortUrlRepository.findActiveByOriginalUrl(eq(VALID_URL_FOR_TEST), any()))
+                .thenReturn(Optional.of(existing));
+        when(shortUrlRepository.findByShortCode(anyString()))
+                .thenReturn(Optional.empty());
+
+        ShortUrl entity = new ShortUrl();
+        when(shortUrlMapper.toEntity(any(), anyString(), anyString()))
+                .thenReturn(entity);
+        when(shortUrlRepository.save(any())).thenReturn(entity);
+        when(shortUrlMapper.toResponseDTO(any(), anyString()))
+                .thenReturn(new ShortUrlResponseDTO());
+
+        shortUrlServiceImpl.createShortUrl(request);
+
+        verify(shortUrlRepository).save(any());
+    }
+
+    @Test
+    void shouldCreateNewUrl_whenNoActiveExistingUrlFound() throws Exception {
+        ShortUrlRequestDTO request = new ShortUrlRequestDTO();
+        request.setOriginalUrl(VALID_URL_FOR_TEST);
+
+        when(shortUrlRepository.findActiveByOriginalUrl(eq(VALID_URL_FOR_TEST), any()))
+                .thenReturn(Optional.empty());
+        when(shortUrlRepository.findByShortCode(anyString()))
+                .thenReturn(Optional.empty());
+
+        ShortUrl entity = new ShortUrl();
+        when(shortUrlMapper.toEntity(any(), anyString(), anyString()))
+                .thenReturn(entity);
+        when(shortUrlRepository.save(any())).thenReturn(entity);
+        when(shortUrlMapper.toResponseDTO(any(), anyString()))
+                .thenReturn(new ShortUrlResponseDTO());
+
+        shortUrlServiceImpl.createShortUrl(request);
+
+        verify(shortUrlRepository).save(any());
+    }
+
 }

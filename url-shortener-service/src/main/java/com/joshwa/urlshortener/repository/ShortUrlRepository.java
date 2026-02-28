@@ -29,4 +29,12 @@ public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long> {
 
     int deleteByExpiryDateBefore(Instant instant);
 
-}
+    @Query("""
+    SELECT s FROM ShortUrl s
+    WHERE s.originalUrl = :originalUrl
+      AND (s.expiryDate IS NULL OR s.expiryDate > :now)
+""")
+    Optional<ShortUrl> findActiveByOriginalUrl(
+            @Param("originalUrl") String originalUrl,
+            @Param("now") Instant now
+    );}
