@@ -217,7 +217,13 @@ Both backend and frontend use environment-based configuration.
    - `REDIS_PORT` → 6379  
    - `VITE_API_BASE_URL` → http://localhost:8081  
 
-3. Ensure the database `url_shortener_db` exists in MySQL before starting the backend.
+3. Make sure Redis is running in Docker. If it is not running, start it using:
+
+   ```
+   docker run -d -p 6379:6379 redis
+   ```
+
+4. Ensure the database `url_shortener_db` exists in MySQL before starting the backend.
 
 ---
 
@@ -264,7 +270,18 @@ This project includes:
 - Integration tests for end-to-end validation
 - Exception and validation scenario coverage
 
+Before running integration tests (mvn test), ensure that Redis is running in Docker.
+If it is not running, start it using:
+
+Make sure Redis is running in Docker. If it is not running, start it using:
+
+```
+docker run -d -p 6379:6379 redis
+```
+
 To run all tests:
+
+*Note: Integration tests require a running Redis instance on port 6379.*
 
 ```
 cd url-shortener-service
