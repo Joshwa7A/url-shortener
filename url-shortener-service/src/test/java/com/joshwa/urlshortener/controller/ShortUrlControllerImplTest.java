@@ -62,7 +62,6 @@ class ShortUrlControllerImplTest {
 
     @Test
     void shouldCreateAndRedirectSuccessfully_endToEndFlow() throws Exception {
-
          String response= mockMvc.perform(post("/api/v1/short-urls")
                 .contentType(MediaType.APPLICATION_JSON).content(VALID_SHORTURL_JSONREQUEST))
                  .andExpect(status().isCreated())
